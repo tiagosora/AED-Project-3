@@ -25,7 +25,6 @@ int compare_tree_nodes(tree_node_t *node1,tree_node_t *node2){
 void tree_insert(tree_node_t **link, tree_node_t *tuple, int ncases){
   if(*link == NULL){ 
     (*link) = tuple;
-    printf("%10d %10d\n",(*link)->A,(*link)->B);
   } else {
     int compare = compare_tree_nodes(*link, tuple);
     if( compare > 0){  
@@ -39,12 +38,55 @@ void tree_insert(tree_node_t **link, tree_node_t *tuple, int ncases){
     }
   } 
 }
-int tree_depth(tree_node_t *link, int main_index) {
+
+
+int highestCostLeaf(tree_node_t *link) {
   if (link == NULL){return 0;}
-  int ld = tree_depth(link->left[main_index], main_index);
-  int rd = tree_depth(link->right[main_index], main_index);
+  int ld = highestCostLeaf(link->left);
+  int rd = highestCostLeaf(link->right);
+  if (ld > rd) {return ld + link->B;}
+  else {return rd + link->B;}
+}
+
+int tree_depth_search(tree_node_t *link, int sum) {
+  if (link == NULL){return 0;}
+  if ((link->left) != NULL)
+    sum = tree_depth_search(link->left, (sum + (link->left)->B));
+  if ((link->right) != NULL)
+    sum = tree_depth_search(link->right, (sum + (link->right)->B));
+  return (sum + link->B);
+}
+
+int tree_depth(tree_node_t *link) {
+  if (link == NULL){return 0;}
+  int ld = tree_depth(link->left);
+  int rd = tree_depth(link->right);
   if (ld > rd) {return ld + 1;}
   else {return rd + 1;}
+}
+
+int searchLevel(tree_node_t *link, int level, int sum) {
+  if (link == NULL)
+    return 0;
+  if (level == 1)
+    return (sum + link->B);
+  else if (level > 1) {
+    if ((link->left) != NULL)
+      sum = searchLevel(link->left, level - 1, (sum + (link->left)->B));
+    if ((link->right) != NULL)
+      sum = searchLevel(link->right, level - 1, (sum + (link->right)->B));
+    return (sum + link->B);
+  }
+}
+
+int tree_breadth_search(tree_node_t *link) {
+  int h = tree_depth(link), sum = 0;
+  if (link != NULL) {
+    for (int i = 1; i <= h; i++){
+      sum = sum + searchLevel(link, i, 0) - link->B;
+    }
+  }
+  return sum;
 }
 
 int executor(int ncases) {
@@ -72,13 +114,26 @@ int executor(int ncases) {
     //    para ir da raiz (4,1) para o nó (1,7) o custo é 3+7=11 --- (1,4)->(2,3) + (2,3)->(1,7).
     //    Para ir, por exemplo, de (1,7) para (3,2), o custo é 7+2 --- (1,7)->(2,3) + (2,3)->(3,2)
     // 5) Começando na raiz, e andando sempre para baixo, qual é a folha cujo caminho para lá chegar tem maior custo?
-
-
+    int rlcost = 0;
+    if (root != NULL){
+      rlcost = highestCostLeaf(root) - root->B;
+    }
+    printf("Highest cost path R->L: %d\n", rlcost);
+    // 6) Começando na raiz, qual é o custo de percorrer a árvore toda usando depth search?
+    int dfscost = 0;
+    if (root != NULL){
+      dfscost = tree_depth_search(root,0) - root->B;
+    }
+    printf("Depth First Search Cost: %d\n", dfscost);
+    // 7) Começando na raiz, qual é o custo de percorrer a árvore toda usando breadth search?
+    int bfscost = tree_breadth_search(root);
+    printf("Breadth First Search Cost: %d\n", bfscost);
+    
     return EXIT_SUCCESS;
 }
 
 int main(int argc,char **argv){
-    // srand(time(NULL));
+    srand(time(NULL));
     // 1) Leia do terminal ou da linha de comandos o número N. Este número não poderá ser inferior a 10 nem superior a 10000.
     if(argc < 2) {
         printf("Program Usage: ./main arg1\n");
